@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wiggle Zoo – ぜんぶあそぼう！</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --card-bg: #ffffff;
+      --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --radius: 1.5rem;
+      --brand: #ff6b6b;
+      --brand-alt: #ffa502;
+      --card-size: 200px; /* 200 × 200 */
+      --gap: 16px;        /* カード間余白 */
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== Header ===== */
+    .header {
+      flex: 0 0 auto;
+      padding: 0.8rem 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: #f3f4f6;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    }
+    .title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--brand);
+      margin-right: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    button.ui-btn {
+      padding: 0.4rem 0.9rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      background: var(--brand);
+      color: #fff;
+      transition: background 0.2s;
+    }
+    button.ui-btn.alt { background: var(--brand-alt); }
+    button.ui-btn:hover { background: #ff5050; }
+    button.ui-btn:active { background: #e63838; }
+
+    /* ===== Cards ===== */
+    #zoo-container {
+      position: relative;
+      flex: 1 1 auto;
+      width: 100%;
+      height: 100%;
+    }
+
+    .zoo-card {
+      width: var(--card-size);
+      height: var(--card-size);
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--card-shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      cursor: pointer;
+      transition: transform 0.15s ease-out;
+      user-select: none;
+    }
+    .zoo-card img {
+      width: 90%;
+      height: 90%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    /* === Animations === */
+    @keyframes wiggle { 0%{transform:rotate(0) translateY(0);} 25%{transform:rotate(6deg) translateY(-4%);} 50%{transform:rotate(0) translateY(0);} 75%{transform:rotate(-6deg) translateY(-4%);} 100%{transform:rotate(0) translateY(0);} }
+    @keyframes bounce { 0%,100%{transform:translateY(0);} 40%{transform:translateY(-15%);} 60%{transform:translateY(-8%);} }
+    @keyframes spin { 0%{transform:rotate(0);} 100%{transform:rotate(360deg);} }
+
+    .anim-wiggle { animation: wiggle 0.8s ease-in-out infinite; }
+    .anim-bounce { animation: bounce 0.9s ease-in-out infinite; }
+    .anim-spin   { animation: spin 1.2s linear infinite; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="title">🐾 Wiggle Zoo</div>
+    <button id="btn-all" class="ui-btn">ぜんぶだっこ！</button>
+    <button id="btn-shuffle" class="ui-btn alt">シャッフル</button>
+  </div>
+
+  <div id="zoo-container"></div>
+
+  <script>
+    /** Wiggle Zoo – Images & sounds must be placed with same basename */
+    const animals = ["cat","dog","elephant","lion","cow","chicken","horse","goat"];
+    const animations = ["wiggle","bounce","spin"];
+    const CARD_SIZE = 200;
+    const GAP = 16;
+
+    // DOM refs
+    const container = document.getElementById("zoo-container");
+    const header   = document.querySelector(".header");
+    const btnAll   = document.getElementById("btn-all");
+    const btnShuffle = document.getElementById("btn-shuffle");
+
+    // State
+    let cards = [];
+    let allMode = false;
+
+    // Utility: shuffle array in-place
+    const shuffle = arr => { for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr; };
+
+    /**
+     * 固定 4×2 グリッド座標を計算
+     * 上段 4枚・下段 4枚
+     */
+    function getGridPositions(){
+      const headerH = header.offsetHeight;
+      const totalW  = 4*CARD_SIZE + 3*GAP;
+      const offsetX = Math.max(GAP, (window.innerWidth - totalW)/2);
+      const offsetY = headerH + GAP; // 上段の Y
+      const positions = [];
+      for(let r=0; r<2; r++){
+        for(let c=0; c<4; c++){
+          const x = offsetX + c*(CARD_SIZE+GAP);
+          const y = offsetY + r*(CARD_SIZE+GAP);
+          positions.push({x,y});
+        }
+      }
+      return positions;
+    }
+
+    /** Build cards in grid */
+    function placeCards(){
+      container.innerHTML="";
+      cards = [];
+
+      const positions = getGridPositions();
+      const shuffledAnimals = shuffle([...animals]);
+
+      shuffledAnimals.forEach((name, idx)=>{
+        const pos = positions[idx];
+        if(!pos) return; // safety
+
+        const card = document.createElement("div");
+        card.className="zoo-card";
+        card.style.left = `${pos.x}px`;
+        card.style.top  = `${pos.y}px`;
+
+        const img = document.createElement("img");
+        img.src = `${name}.png`;
+        img.alt = name;
+        card.appendChild(img);
+
+        const audio = new Audio(`${name}.mp3`);
+        audio.preload = "auto";
+        audio.loop = true;
+
+        const animClass = `anim-${animations[Math.floor(Math.random()*animations.length)]}`;
+
+        const play = ()=>{ audio.currentTime = 0; audio.play().catch(()=>{}); };
+        const stop = ()=>{ audio.pause(); audio.currentTime = 0; };
+        const start = ()=>{ img.classList.add(animClass); play(); };
+        const end   = ()=>{ img.classList.remove(animClass); stop(); };
+
+        card.addEventListener("mouseenter", start);
+        card.addEventListener("mouseleave", end);
+        card.addEventListener("touchstart", e=>{
+          e.preventDefault();
+          if(img.classList.contains(animClass)){ end(); } else { start(); }
+        });
+
+        container.appendChild(card);
+        cards.push({img,audio,animClass});
+      });
+    }
+
+    // 初回配置
+    placeCards();
+
+    // === 全部アニメボタン ===
+    btnAll.addEventListener("click", ()=>{
+      allMode = !allMode;
+      btnAll.textContent = allMode ? "とめる" : "ぜんぶだっこ！";
+      cards.forEach(({img,audio,animClass})=>{
+        if(allMode){ img.classList.add(animClass); audio.play().catch(()=>{}); }
+        else { img.classList.remove(animClass); audio.pause(); audio.currentTime=0; }
+      });
+    });
+
+    // === シャッフルボタン ===
+    btnShuffle.addEventListener("click", ()=>{
+      cards.forEach(({img,audio,animClass})=>{ img.classList.remove(animClass); audio.pause(); audio.currentTime=0; });
+      allMode=false; btnAll.textContent="ぜんぶだっこ！";
+      placeCards();
+    });
+
+    // === Unlock autoplay ===
+    const unlock = ()=>{ const a=new Audio(); a.play().catch(()=>{}); window.removeEventListener("pointermove",unlock); window.removeEventListener("touchstart",unlock); };
+    window.addEventListener("pointermove",unlock,{once:true}); window.addEventListener("touchstart",unlock,{once:true});
+
+    // Resize -> re‑layout grid to stay centered
+    window.addEventListener("resize", placeCards);
+  </script>
+</body>
+</html>
