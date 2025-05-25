@@ -33,72 +33,142 @@
   <div id="zoo-container"></div>
 
   <script>
-    const animals=["cat","dog","elephant","lion","cow","chicken","horse","goat"];
-    const animations=["wiggle","bounce","spin"];
-    const CARD_SIZE=200,GAP=16;
-    const isAndroid=/Android/i.test(navigator.userAgent);
-    const MAX_PLAYS=3;
+    const animals = ["cat","dog","elephant","lion","cow","chicken","horse","goat"];
+    const animations = ["wiggle","bounce","spin"];
+    const CARD_SIZE = 200, GAP = 16;
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const MAX_PLAYS = 3; // Android only
 
-    const container=document.getElementById("zoo-container"),header=document.querySelector(".header"),btnAll=document.getElementById("btn-all"),btnShuffle=document.getElementById("btn-shuffle");
-    let cards=[],allMode=false;
+    const container = document.getElementById("zoo-container");
+    const header = document.querySelector(".header");
+    const btnAll = document.getElementById("btn-all");
+    const btnShuffle = document.getElementById("btn-shuffle");
 
-    const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+    let cards = [];
+    let allMode = false;
 
-    const gridPositions=()=>{const h=header.offsetHeight,totalW=4*CARD_SIZE+3*GAP,offX=Math.max(GAP,(window.innerWidth-totalW)/2),offY=h+GAP,pos=[];for(let r=0;r<2;r++){for(let c=0;c<4;c++){pos.push({x:offX+c*(CARD_SIZE+GAP),y:offY+r*(CARD_SIZE+GAP)});} }return pos;};
+    /* ---------- utility ---------- */
+    const shuffle = arr => { for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr; };
 
-    /* ------- Unlock audio helper -------- */
-    let audioUnlocked=false;
-    function unlockAudio(){
-      if(audioUnlocked) return;
-      audioUnlocked=true;
-      cards.forEach(({audio})=>{
-        try{
-          audio.muted=true;
-          const p=audio.play();
-          if(p){p.then(()=>{audio.pause();audio.currentTime=0;audio.muted=false;});}
-        }catch(e){}
-      });
+    const gridPositions = () => {
+      const headerH = header.offsetHeight;
+      const totalW  = 4*CARD_SIZE + 3*GAP;
+      const offX = Math.max(GAP, (window.innerWidth-totalW)/2);
+      const offY = headerH + GAP;
+      const pos=[];
+      for(let r=0;r<2;r++) for(let c=0;c<4;c++) pos.push({x:offX+c*(CARD_SIZE+GAP),y:offY+r*(CARD_SIZE+GAP)});
+      return pos;
+    };
+
+    /* ---------- audio warm‑up (PC) ---------- */
+    function warmUpAudio(audio){
+      audio.muted = true;
+      audio.play().then(()=>{audio.pause(); audio.currentTime=0; audio.muted=false;}).catch(()=>{});
     }
-    // Any click / touch will unlock
-    window.addEventListener("pointerdown",unlockAudio,{once:false});
-    window.addEventListener("touchstart",unlockAudio,{once:false});
 
-    function createCard(name,pos){
-      const card=document.createElement("div");card.className="zoo-card";card.style.left=`${pos.x}px`;card.style.top=`${pos.y}px`;
-      const img=document.createElement("img");img.src=`${name}.png`;img.alt=name;card.appendChild(img);
+    /* ---------- card creation ---------- */
+    function createCard(name, pos){
+      const card = document.createElement("div");
+      card.className = "zoo-card";
+      card.style.left = `${pos.x}px`;
+      card.style.top  = `${pos.y}px`;
 
-      const audio=new Audio(`${name}.mp3`);
-      audio.preload="auto";
-      if(!isAndroid){audio.loop=true;}
-      else{audio._count=0;audio.addEventListener("ended",()=>{if(audio._playActive&&audio._count<MAX_PLAYS-1){audio._count++;audio.currentTime=0;audio.play().catch(()=>{});}else{audio._playActive=false;}});}
+      const img = document.createElement("img");
+      img.src = `${name}.png`;
+      img.alt = name;
+      card.appendChild(img);
 
-      const animClass=`anim-${animations[Math.floor(Math.random()*animations.length)]}`;
+      const audio = new Audio(`${name}.mp3`);
+      audio.preload = "auto";
 
-      const start=()=>{
-        unlockAudio();
+      const animClass = `anim-${animations[Math.floor(Math.random()*animations.length)]}`;
+
+      if(isAndroid){
+        audio._count = 0;
+        audio._playActive = false;
+        audio.addEventListener("ended", () => {
+          if(!audio._playActive) return;
+          if(audio._count < MAX_PLAYS - 1){
+            audio._count++;
+            audio.currentTime = 0;
+            audio.play().catch(()=>{});
+          } else {
+            audio._playActive = false;
+            img.classList.remove(animClass); // stop animation too
+          }
+        });
+      } else {
+        audio.loop = true;
+        warmUpAudio(audio); // unlock on load for PC
+      }
+
+      const start = () => {
         img.classList.add(animClass);
-        audio._playActive=true;audio._count=0;
-        audio.currentTime=0;
+        audio._playActive = true;
+        audio._count = 0;
+        audio.currentTime = 0;
         audio.play().catch(()=>{});
       };
-      const stop=()=>{img.classList.remove(animClass);audio._playActive=false;audio.pause();audio.currentTime=0;};
+      const stop  = () => {
+        img.classList.remove(animClass);
+        audio._playActive = false;
+        audio.pause();
+        audio.currentTime = 0;
+      };
 
-      card.addEventListener("mouseenter",start);
-      card.addEventListener("mouseleave",stop);
-      card.addEventListener("touchstart",e=>{e.preventDefault();img.classList.contains(animClass)?stop():start();});
+      card.addEventListener("mouseenter", start);
+      card.addEventListener("mouseleave", stop);
+      card.addEventListener("touchstart", e => { e.preventDefault(); img.classList.contains(animClass) ? stop() : start(); });
+
       container.appendChild(card);
       cards.push({img,audio,animClass});
     }
 
-    function placeCards(){container.innerHTML="";cards=[];const positions=gridPositions(),names=shuffle([...animals]);names.forEach((n,i)=>positions[i]&&createCard(n,positions[i]));}
+    function placeCards(){
+      container.innerHTML="";
+      cards=[];
+      const pos = gridPositions();
+      const names = shuffle([...animals]);
+      names.forEach((n,i)=> pos[i] && createCard(n,pos[i]));
+    }
 
+    /* ---------- initial ---------- */
     placeCards();
 
-    btnAll.addEventListener("click",()=>{unlockAudio();allMode=!allMode;btnAll.textContent=allMode?"とめる":"ぜんぶだっこ！";cards.forEach(({img,audio,animClass})=>{if(allMode){img.classList.add(animClass);audio._playActive=true;audio._count=0;audio.currentTime=0;audio.play().catch(()=>{});}else{img.classList.remove(animClass);audio._playActive=false;audio.pause();audio.currentTime=0;}});});
+    /* ---------- buttons ---------- */
+    btnAll.addEventListener("click", () => {
+      allMode = !allMode;
+      btnAll.textContent = allMode ? "とめる" : "ぜんぶだっこ！";
+      cards.forEach(({img,audio,animClass}) => {
+        if(allMode){
+          img.classList.add(animClass);
+          audio._playActive = true;
+          audio._count = 0;
+          audio.currentTime = 0;
+          audio.play().catch(()=>{});
+        } else {
+          img.classList.remove(animClass);
+          audio._playActive = false;
+          audio.pause();
+          audio.currentTime = 0;
+        }
+      });
+    });
 
-    btnShuffle.addEventListener("click",()=>{cards.forEach(({img,audio,animClass})=>{img.classList.remove(animClass);audio._playActive=false;audio.pause();audio.currentTime=0;});allMode=false;btnAll.textContent="ぜんぶだっこ！";placeCards();});
+    btnShuffle.addEventListener("click", () => {
+      cards.forEach(({img,audio,animClass}) => {
+        img.classList.remove(animClass);
+        audio._playActive = false;
+        audio.pause();
+        audio.currentTime = 0;
+      });
+      allMode = false;
+      btnAll.textContent = "ぜんぶだっこ！";
+      placeCards();
+    });
 
-    window.addEventListener("resize",placeCards);
+    /* ---------- resize ---------- */
+    window.addEventListener("resize", placeCards);
   </script>
 </body>
 </html>
