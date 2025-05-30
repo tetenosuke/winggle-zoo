@@ -2,143 +2,873 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wiggle Zoo – ぜんぶあそぼう！</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Wiggle Zoo – まほうのどうぶつえん</title>
   <style>
     :root {
-      --bg: #ffffff;
+      --bg: #e3f2fd;
       --card-bg: #ffffff;
-      --card-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      --radius: 1.5rem;
+      --card-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      --radius: 2rem;
       --brand: #ff6b6b;
       --brand-alt: #ffa502;
-      /* 動的サイズ */
-      --card-size: 200px;
+      --card-size: 180px;
       --gap: 16px;
-      --title-size: 1.6rem;
+      --title-size: 1.8rem;
     }
-    html,body{margin:0;padding:0;width:100%;height:100%;background:var(--bg);font-family:"Segoe UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;overflow:hidden;display:flex;flex-direction:column;}
-    .header{flex:0 0 auto;padding:.8rem 1.2rem;display:flex;align-items:center;gap:1rem;background:#f3f4f6;box-shadow:0 2px 6px rgba(0,0,0,.06);} .title{font-size:var(--title-size);font-weight:700;color:var(--brand);margin-right:auto;display:flex;align-items:center;gap:.4rem;}
-    button.ui-btn{padding:.4rem .9rem;font-size:calc(var(--title-size)*0.55);font-weight:600;border:none;border-radius:999px;cursor:pointer;background:var(--brand);color:#fff;transition:background .2s;} button.ui-btn.alt{background:var(--brand-alt);} button.ui-btn:hover{background:#ff5050;} button.ui-btn:active{background:#e63838;}
-    #zoo-container{position:relative;flex:1 1 auto;width:100%;height:100%;}
-    .zoo-card{width:var(--card-size);height:var(--card-size);background:var(--card-bg);border-radius:var(--radius);box-shadow:var(--card-shadow);display:flex;align-items:center;justify-content:center;position:absolute;cursor:pointer;transition:transform .15s ease-out;user-select:none;} .zoo-card img{width:90%;height:90%;object-fit:contain;pointer-events:none;}
-    @keyframes wiggle{0%{transform:rotate(0) translateY(0);}25%{transform:rotate(6deg) translateY(-4%);}50%{transform:rotate(0) translateY(0);}75%{transform:rotate(-6deg) translateY(-4%);}100%{transform:rotate(0) translateY(0);}} @keyframes bounce{0%,100%{transform:translateY(0);}40%{transform:translateY(-15%);}60%{transform:translateY(-8%);}} @keyframes spin{0%{transform:rotate(0);}100%{transform:rotate(360deg);} }
-    .anim-wiggle{animation:wiggle .8s ease-in-out infinite;} .anim-bounce{animation:bounce .9s ease-in-out infinite;} .anim-spin{animation:spin 1.2s linear infinite;}
-    /* サウンド解除オーバーレイ */
-    #sound-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:999;font-size:2rem;color:#fff;text-align:center;flex-direction:column;gap:.5rem;cursor:pointer;} #sound-overlay.fade{animation:fadeOut .6s forwards;} @keyframes fadeOut{to{opacity:0;visibility:hidden;}}
+
+    * {
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      font-family: "Rounded Mplus 1c", "Segoe UI", "Hiragino Kaku Gothic ProN", sans-serif;
+      overflow: hidden;
+      position: fixed;
+    }
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 背景装飾 */
+    .bg-decoration {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .cloud {
+      position: absolute;
+      width: 100px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 100px;
+      animation: float 20s infinite ease-in-out;
+    }
+
+    .cloud::before {
+      content: '';
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 50%;
+      top: -25px;
+      left: 10px;
+    }
+
+    .cloud::after {
+      content: '';
+      position: absolute;
+      width: 60px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 50%;
+      top: -20px;
+      right: 10px;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateX(-100px); }
+      50% { transform: translateX(calc(100vw + 100px)); }
+    }
+
+    /* ヘッダー */
+    .header {
+      flex: 0 0 auto;
+      padding: 1rem 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      backdrop-filter: blur(10px);
+      z-index: 10;
+    }
+
+    .title {
+      font-size: var(--title-size);
+      font-weight: 800;
+      background: linear-gradient(45deg, #ff6b6b, #ffa502);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-right: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .mode-indicator {
+      font-size: 1.2rem;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+
+    /* ボタン */
+    button.ui-btn {
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--brand) 0%, #ff5252 100%);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button.ui-btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    button.ui-btn:active::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    button.ui-btn.alt {
+      background: linear-gradient(135deg, var(--brand-alt) 0%, #ff7675 100%);
+      box-shadow: 0 4px 12px rgba(255, 165, 2, 0.4);
+    }
+
+    button.ui-btn.mode {
+      background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+      box-shadow: 0 4px 12px rgba(108, 92, 231, 0.4);
+    }
+
+    /* メインコンテナ */
+    #zoo-container {
+      position: relative;
+      flex: 1 1 auto;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* 動物カード */
+    .zoo-card {
+      width: var(--card-size);
+      height: var(--card-size);
+      background: linear-gradient(145deg, #ffffff, #f5f5f5);
+      border-radius: var(--radius);
+      box-shadow: var(--card-shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+      -webkit-user-select: none;
+      transform-style: preserve-3d;
+    }
+
+    .zoo-card::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      background: linear-gradient(45deg, #ff6b6b, #ffa502, #ff6b6b);
+      border-radius: var(--radius);
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: -1;
+    }
+
+    .zoo-card.active::before {
+      opacity: 1;
+    }
+
+    .zoo-card.active {
+      transform: scale(1.1) translateZ(20px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+    }
+
+    .zoo-card.hidden {
+      opacity: 0;
+      transform: scale(0) rotate(360deg);
+    }
+
+    .zoo-card img {
+      width: 85%;
+      height: 85%;
+      object-fit: contain;
+      pointer-events: none;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+    }
+
+    /* アニメーション */
+    @keyframes wiggle {
+      0% { transform: rotate(0) translateY(0) scale(1); }
+      25% { transform: rotate(8deg) translateY(-5%) scale(1.05); }
+      50% { transform: rotate(0) translateY(0) scale(1); }
+      75% { transform: rotate(-8deg) translateY(-5%) scale(1.05); }
+      100% { transform: rotate(0) translateY(0) scale(1); }
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0) scale(1); }
+      40% { transform: translateY(-20%) scale(1.1); }
+      60% { transform: translateY(-10%) scale(1.05); }
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0) scale(1); }
+      50% { transform: rotate(180deg) scale(1.1); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+
+    @keyframes dance {
+      0%, 100% { transform: translateX(0) rotate(0); }
+      25% { transform: translateX(-10%) rotate(-5deg); }
+      75% { transform: translateX(10%) rotate(5deg); }
+    }
+
+    .anim-wiggle { animation: wiggle 0.8s ease-in-out infinite; }
+    .anim-bounce { animation: bounce 0.9s ease-in-out infinite; }
+    .anim-spin { animation: spin 1.2s ease-in-out infinite; }
+    .anim-dance { animation: dance 1s ease-in-out infinite; }
+
+    /* パーティクルエフェクト */
+    .particle {
+      position: absolute;
+      pointer-events: none;
+      font-size: 2rem;
+      animation: particle-float 2s ease-out forwards;
+      z-index: 100;
+    }
+
+    @keyframes particle-float {
+      0% {
+        transform: translate(0, 0) scale(0);
+        opacity: 1;
+      }
+      50% {
+        transform: translate(var(--tx), -100px) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(var(--tx), -200px) scale(0);
+        opacity: 0;
+      }
+    }
+
+    /* サウンドオーバーレイ */
+    #sound-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      font-size: 2.5rem;
+      color: #fff;
+      text-align: center;
+      flex-direction: column;
+      gap: 1rem;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+    }
+
+    #sound-overlay .emoji {
+      font-size: 5rem;
+      animation: bounce 1s ease-in-out infinite;
+    }
+
+    #sound-overlay.fade {
+      animation: fadeOut 0.6s forwards;
+    }
+
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+        visibility: hidden;
+      }
+    }
+
+    /* モード表示 */
+    .mode-display {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 3rem;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.9);
+      text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s;
+      z-index: 50;
+    }
+
+    .mode-display.show {
+      opacity: 1;
+    }
+
+    /* かくれんぼモード */
+    .hide-mode .zoo-card {
+      opacity: 0.3;
+      transform: scale(0.8);
+    }
+
+    .hide-mode .zoo-card.found {
+      opacity: 1;
+      transform: scale(1);
+      animation: found-animation 0.6s ease-out;
+    }
+
+    @keyframes found-animation {
+      0% { transform: scale(0) rotate(360deg); }
+      50% { transform: scale(1.2) rotate(180deg); }
+      100% { transform: scale(1) rotate(0); }
+    }
+
+    /* おやすみモード */
+    .sleep-mode {
+      filter: brightness(0.7) saturate(0.8);
+    }
+
+    .sleep-mode .zoo-card img {
+      animation: sleep-breathing 3s ease-in-out infinite;
+    }
+
+    @keyframes sleep-breathing {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(0.95); }
+    }
+
+    /* スコア表示 */
+    .score-display {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 1rem 1.5rem;
+      border-radius: 999px;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--brand);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transform: translateY(100px);
+      transition: transform 0.3s;
+    }
+
+    .score-display.show {
+      transform: translateY(0);
+    }
+
+    /* フルスクリーンボタン */
+    .fullscreen-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: transform 0.3s;
+      z-index: 100;
+    }
+
+    .fullscreen-btn:active {
+      transform: scale(0.9);
+    }
   </style>
 </head>
 <body>
-  <div id="sound-overlay">🔊 クリックで音をON！<br><span style="font-size:1rem;">Click / Tap to enable sound</span></div>
+  <div class="bg-decoration">
+    <div class="cloud" style="top: 10%; animation-delay: 0s;"></div>
+    <div class="cloud" style="top: 30%; animation-delay: 7s;"></div>
+    <div class="cloud" style="top: 50%; animation-delay: 14s;"></div>
+  </div>
+
+  <div id="sound-overlay">
+    <div class="emoji">🎵</div>
+    <div>タップして はじめる！</div>
+    <div style="font-size: 1rem;">まほうのどうぶつえんへ ようこそ</div>
+  </div>
 
   <div class="header">
-    <div class="title">🐾 Wiggle Zoo</div>
-    <button id="btn-all" class="ui-btn">ぜんぶだっこ！</button>
+    <div class="title">
+      <span class="mode-indicator">🌟</span>
+      Wiggle Zoo
+    </div>
+    <button id="btn-all" class="ui-btn">ぜんぶ あそぶ！</button>
+    <button id="btn-mode" class="ui-btn mode">モード</button>
     <button id="btn-shuffle" class="ui-btn alt">シャッフル</button>
   </div>
+
   <div id="zoo-container"></div>
+  
+  <div class="mode-display" id="mode-display"></div>
+  <div class="score-display" id="score-display">
+    <span>⭐</span>
+    <span id="score">0</span>
+  </div>
+  
+  <div class="fullscreen-btn" id="fullscreen-btn">⛶</div>
 
   <script>
-    const animals=["cat","dog","elephant","lion","cow","chicken","horse","goat"];
-    const animations=["wiggle","bounce","spin"];
-    const isAndroid=/Android/i.test(navigator.userAgent);
-    const MAX_PLAYS=3;
-
-    const container=document.getElementById('zoo-container');
-    const header=document.querySelector('.header');
-    const btnAll=document.getElementById('btn-all');
-    const btnShuffle=document.getElementById('btn-shuffle');
-    const overlay=document.getElementById('sound-overlay');
-
-    let cards=[];let allMode=false;let audioUnlocked=false;
-
-    /* ---- responsive sizes ---- */
-    function updateSizing(){
-      const gap=window.innerWidth<768?8:16;
-      const maxC=200,minC=100;
-      const calc=Math.min(maxC,Math.max(minC,(window.innerWidth-gap*5)/4));
-      document.documentElement.style.setProperty('--card-size',calc+'px');
-      document.documentElement.style.setProperty('--gap',gap+'px');
-      document.documentElement.style.setProperty('--title-size',(calc*0.3)+'px');
+    // 動物と音のデータ
+    const animals = [
+      { name: "cat", emoji: "🐱", color: "#ff6b6b" },
+      { name: "dog", emoji: "🐕", color: "#ffa502" },
+      { name: "elephant", emoji: "🐘", color: "#3742fa" },
+      { name: "lion", emoji: "🦁", color: "#ff7675" },
+      { name: "cow", emoji: "🐄", color: "#74b9ff" },
+      { name: "chicken", emoji: "🐔", color: "#fdcb6e" },
+      { name: "horse", emoji: "🐴", color: "#6c5ce7" },
+      { name: "goat", emoji: "🐐", color: "#a29bfe" }
+    ];
+    
+    const animations = ["wiggle", "bounce", "spin", "dance"];
+    const particles = ["⭐", "💫", "✨", "🌟", "💖", "🎵", "🌈", "🦋"];
+    
+    // ゲームモード
+    const MODES = {
+      NORMAL: { name: "ノーマル", emoji: "🌟" },
+      HIDE: { name: "かくれんぼ", emoji: "🙈" },
+      SLEEP: { name: "おやすみ", emoji: "😴" }
+    };
+    
+    let currentMode = MODES.NORMAL;
+    let modeIndex = 0;
+    const modeKeys = Object.keys(MODES);
+    
+    // DOM要素
+    const container = document.getElementById('zoo-container');
+    const header = document.querySelector('.header');
+    const btnAll = document.getElementById('btn-all');
+    const btnMode = document.getElementById('btn-mode');
+    const btnShuffle = document.getElementById('btn-shuffle');
+    const overlay = document.getElementById('sound-overlay');
+    const modeDisplay = document.getElementById('mode-display');
+    const scoreDisplay = document.getElementById('score-display');
+    const scoreText = document.getElementById('score');
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    
+    // ゲーム状態
+    let cards = [];
+    let allMode = false;
+    let audioUnlocked = false;
+    let score = 0;
+    let foundAnimals = new Set();
+    
+    // Android判定
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const MAX_PLAYS = 3;
+    
+    // 効果音
+    const sounds = {
+      success: new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSl7yfPTgjMGHGm+8+OWT'),
+      click: new Audio('data:audio/wav;base64,UklGRhYCAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAAA')
+    };
+    
+    // レスポンシブサイズ調整
+    function updateSizing() {
+      const width = window.innerWidth;
+      const height = window.innerHeight - header.offsetHeight;
+      const cols = width < 600 ? 3 : 4;
+      const rows = 2;
+      const gap = width < 600 ? 12 : 16;
+      const maxCardSize = Math.min(200, (width - gap * (cols + 1)) / cols, (height - gap * (rows + 1)) / rows);
+      const cardSize = Math.max(100, maxCardSize);
+      
+      document.documentElement.style.setProperty('--card-size', `${cardSize}px`);
+      document.documentElement.style.setProperty('--gap', `${gap}px`);
+      document.documentElement.style.setProperty('--title-size', `${Math.min(2, cardSize * 0.012)}rem`);
     }
-
-    /* ---- utilities ---- */
-    const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
-
-    function gridPositions(){
-      const gap=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap'));
-      const card=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-size'));
-      const headerH=header.offsetHeight;
-      const totalW=4*card+3*gap;
-      const offX=Math.max(gap,(window.innerWidth-totalW)/2);
-      const offY=headerH+gap;
-      const pos=[];for(let r=0;r<2;r++)for(let c=0;c<4;c++)pos.push({x:offX+c*(card+gap),y:offY+r*(card+gap)});
-      return pos;
-    }
-
-    /* ---- audio unlock ---- */
-    function unlockAudio(){
-      if(audioUnlocked){return;}
-      audioUnlocked=true;
-      overlay.classList.add('fade');
-      cards.forEach(({audio})=>{try{audio.muted=true;audio.play().then(()=>{audio.pause();audio.currentTime=0;audio.muted=false;});}catch(e){}});
-    }
-    overlay.addEventListener('click',unlockAudio);
-
-    /* ---- card builder ---- */
-    function createCard(name,pos){
-      const card=document.createElement('div');card.className='zoo-card';card.style.left=`${pos.x}px`;card.style.top=`${pos.y}px`;
-      const img=document.createElement('img');img.src=`${name}.png`;img.alt=name;card.appendChild(img);
-      const audio=new Audio(`${name}.mp3`);audio.preload='auto';
-      const animClass=`anim-${animations[Math.floor(Math.random()*animations.length)]}`;
-
-      if(isAndroid){
-        audio._count=0;audio._playActive=false;
-        audio.addEventListener('ended',()=>{if(!audio._playActive)return; if(audio._count<MAX_PLAYS-1){audio._count++;audio.currentTime=0;audio.play().catch(()=>{});}else{audio._playActive=false;img.classList.remove(animClass);}});
-      }else{
-        audio.loop=true;
+    
+    // ユーティリティ
+    const shuffle = arr => {
+      const newArr = [...arr];
+      for (let i = newArr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
       }
-
-      const start=()=>{
-        if(!audioUnlocked)return; // wait until overlay clicked
+      return newArr;
+    };
+    
+    // グリッド位置計算
+    function gridPositions() {
+      const gap = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap'));
+      const cardSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-size'));
+      const headerHeight = header.offsetHeight;
+      const containerWidth = window.innerWidth;
+      const containerHeight = window.innerHeight - headerHeight;
+      
+      const cols = containerWidth < 600 ? 3 : 4;
+      const rows = 2;
+      
+      const totalWidth = cols * cardSize + (cols - 1) * gap;
+      const totalHeight = rows * cardSize + (rows - 1) * gap;
+      
+      const offsetX = Math.max(gap, (containerWidth - totalWidth) / 2);
+      const offsetY = headerHeight + Math.max(gap, (containerHeight - totalHeight) / 2);
+      
+      const positions = [];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (positions.length < animals.length) {
+            positions.push({
+              x: offsetX + c * (cardSize + gap),
+              y: offsetY + r * (cardSize + gap)
+            });
+          }
+        }
+      }
+      
+      return positions;
+    }
+    
+    // パーティクル生成
+    function createParticle(x, y) {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      particle.textContent = particles[Math.floor(Math.random() * particles.length)];
+      particle.style.left = `${x}px`;
+      particle.style.top = `${y}px`;
+      particle.style.setProperty('--tx', `${(Math.random() - 0.5) * 100}px`);
+      document.body.appendChild(particle);
+      
+      setTimeout(() => particle.remove(), 2000);
+    }
+    
+    // スコア更新
+    function updateScore(points) {
+      score += points;
+      scoreText.textContent = score;
+      scoreDisplay.classList.add('show');
+      
+      // スコアアニメーション
+      scoreDisplay.style.transform = 'scale(1.2)';
+      setTimeout(() => {
+        scoreDisplay.style.transform = 'scale(1)';
+      }, 300);
+    }
+    
+    // モード変更
+    function changeMode() {
+      modeIndex = (modeIndex + 1) % modeKeys.length;
+      currentMode = MODES[modeKeys[modeIndex]];
+      
+      // モード表示
+      modeDisplay.textContent = `${currentMode.emoji} ${currentMode.name}モード`;
+      modeDisplay.classList.add('show');
+      setTimeout(() => modeDisplay.classList.remove('show'), 2000);
+      
+      // モードインジケーター更新
+      document.querySelector('.mode-indicator').textContent = currentMode.emoji;
+      
+      // クラス適用
+      document.body.classList.remove('hide-mode', 'sleep-mode');
+      if (currentMode === MODES.HIDE) {
+        document.body.classList.add('hide-mode');
+        foundAnimals.clear();
+        cards.forEach(card => card.element.classList.remove('found'));
+      } else if (currentMode === MODES.SLEEP) {
+        document.body.classList.add('sleep-mode');
+      }
+      
+      // 音を停止
+      stopAllSounds();
+    }
+    
+    // 音声アンロック
+    function unlockAudio() {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+      overlay.classList.add('fade');
+      
+      // 効果音の準備
+      Object.values(sounds).forEach(audio => {
+        audio.volume = 0.3;
+        try {
+          audio.play().then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+          });
+        } catch (e) {}
+      });
+      
+      // 動物の音声準備
+      cards.forEach(({ audio }) => {
+        try {
+          audio.muted = true;
+          audio.play().then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+            audio.muted = false;
+          });
+        } catch (e) {}
+      });
+    }
+    
+    // カード作成
+    function createCard(animal, pos) {
+      const card = document.createElement('div');
+      card.className = 'zoo-card';
+      card.style.left = `${pos.x}px`;
+      card.style.top = `${pos.y}px`;
+      
+      const img = document.createElement('img');
+      img.src = `${animal.name}.png`;
+      img.alt = animal.name;
+      card.appendChild(img);
+      
+      const audio = new Audio(`${animal.name}.mp3`);
+      audio.preload = 'auto';
+      audio.volume = 0.6;
+      
+      const animClass = `anim-${animations[Math.floor(Math.random() * animations.length)]}`;
+      
+      // Android用の再生制御
+      if (isAndroid) {
+        audio._count = 0;
+        audio._playActive = false;
+        audio.addEventListener('ended', () => {
+          if (!audio._playActive) return;
+          if (audio._count < MAX_PLAYS - 1) {
+            audio._count++;
+            audio.currentTime = 0;
+            audio.play().catch(() => {});
+          } else {
+            audio._playActive = false;
+            img.classList.remove(animClass);
+            card.classList.remove('active');
+          }
+        });
+      } else {
+        audio.loop = true;
+      }
+      
+      const start = () => {
+        if (!audioUnlocked) return;
+        
+        // かくれんぼモード
+        if (currentMode === MODES.HIDE && !card.classList.contains('found')) {
+          card.classList.add('found');
+          foundAnimals.add(animal.name);
+          updateScore(10);
+          createParticle(pos.x + 90, pos.y + 90);
+          sounds.success.play().catch(() => {});
+          
+          // 全部見つけた
+          if (foundAnimals.size === animals.length) {
+            setTimeout(() => {
+              alert('🎉 ぜんぶ みつけたよ！すごい！');
+              foundAnimals.clear();
+              cards.forEach(c => c.element.classList.remove('found'));
+            }, 500);
+          }
+        }
+        
+        // 通常の動作
         img.classList.add(animClass);
-        audio._playActive=true;audio._count=0;audio.currentTime=0;audio.play().catch(()=>{});
+        card.classList.add('active');
+        audio._playActive = true;
+        audio._count = 0;
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+        
+        // パーティクル
+        createParticle(pos.x + 90, pos.y + 90);
+        updateScore(1);
       };
-      const stop=()=>{img.classList.remove(animClass);audio._playActive=false;audio.pause();audio.currentTime=0;};
-
-      card.addEventListener('mouseenter',start);
-      card.addEventListener('mouseleave',stop);
-      card.addEventListener('touchstart',e=>{e.preventDefault();img.classList.contains(animClass)?stop():start();});
-
+      
+      const stop = () => {
+        img.classList.remove(animClass);
+        card.classList.remove('active');
+        audio._playActive = false;
+        audio.pause();
+        audio.currentTime = 0;
+      };
+      
+      // イベントリスナー
+      card.addEventListener('mouseenter', () => {
+        if (!allMode) start();
+      });
+      
+      card.addEventListener('mouseleave', () => {
+        if (!allMode) stop();
+      });
+      
+      card.addEventListener('touchstart', e => {
+        e.preventDefault();
+        if (allMode) return;
+        
+        if (img.classList.contains(animClass)) {
+          stop();
+        } else {
+          start();
+        }
+      });
+      
       container.appendChild(card);
-      cards.push({img,audio,animClass});
+      
+      return {
+        element: card,
+        img,
+        audio,
+        animClass,
+        start,
+        stop
+      };
     }
-
-    function placeCards(){
+    
+    // 全ての音を停止
+    function stopAllSounds() {
+      cards.forEach(card => card.stop());
+      allMode = false;
+      btnAll.textContent = 'ぜんぶ あそぶ！';
+    }
+    
+    // カード配置
+    function placeCards() {
       updateSizing();
-      container.innerHTML='';cards=[];
-      const pos=gridPositions();
-      shuffle([...animals]).forEach((n,i)=>pos[i]&&createCard(n,pos[i]));
+      container.innerHTML = '';
+      cards = [];
+      
+      const positions = gridPositions();
+      const shuffledAnimals = shuffle(animals);
+      
+      shuffledAnimals.forEach((animal, i) => {
+        if (positions[i]) {
+          const card = createCard(animal, positions[i]);
+          cards.push(card);
+        }
+      });
+      
+      // カードの表示アニメーション
+      cards.forEach((card, i) => {
+        card.element.classList.add('hidden');
+        setTimeout(() => {
+          card.element.classList.remove('hidden');
+        }, i * 100);
+      });
     }
-
-    /* ---- init ---- */
-    placeCards();
-
-    /* ---- buttons ---- */
-    btnAll.addEventListener('click',()=>{
-      if(!audioUnlocked)return; // ignore until unlocked
-      allMode=!allMode;btnAll.textContent=allMode?'とめる':'ぜんぶだっこ！';
-      cards.forEach(({img,audio,animClass})=>{if(allMode){img.classList.add(animClass);audio._playActive=true;audio._count=0;audio.currentTime=0;audio.play().catch(()=>{});}else{img.classList.remove(animClass);audio._playActive=false;audio.pause();audio.currentTime=0;}});
+    
+    // 初期化
+    overlay.addEventListener('click', unlockAudio);
+    
+    // ボタンイベント
+    btnAll.addEventListener('click', () => {
+      if (!audioUnlocked) return;
+      
+      allMode = !allMode;
+      btnAll.textContent = allMode ? 'とめる' : 'ぜんぶ あそぶ！';
+      
+      if (allMode) {
+        cards.forEach((card, i) => {
+          setTimeout(() => card.start(), i * 100);
+        });
+        
+        // 花火エフェクト
+        for (let i = 0; i < 10; i++) {
+          setTimeout(() => {
+            const x = Math.random() * window.innerWidth;
+            const y = Math.random() * window.innerHeight;
+            createParticle(x, y);
+          }, i * 100);
+        }
+      } else {
+        cards.forEach(card => card.stop());
+      }
+      
+      sounds.click.play().catch(() => {});
     });
-
-    btnShuffle.addEventListener('click',()=>{
-      cards.forEach(({img,audio,animClass})=>{img.classList.remove(animClass);audio._playActive=false;audio.pause();audio.currentTime=0;});
-      allMode=false;btnAll.textContent='ぜんぶだっこ！';
+    
+    btnMode.addEventListener('click', () => {
+      changeMode();
+      sounds.click.play().catch(() => {});
+    });
+    
+    btnShuffle.addEventListener('click', () => {
+      stopAllSounds();
       placeCards();
+      sounds.click.play().catch(() => {});
     });
-
-    /* ---- resize ---- */
-    window.addEventListener('resize',placeCards);
+    
+    // フルスクリーン
+    fullscreenBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+        fullscreenBtn.textContent = '✕';
+      } else {
+        document.exitFullscreen().catch(() => {});
+        fullscreenBtn.textContent = '⛶';
+      }
+    });
+    
+    // リサイズ対応
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        placeCards();
+      }, 300);
+    });
+    
+    // 向き変更対応
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => {
+        placeCards();
+      }, 100);
+    });
+    
+    // 初期配置
+    placeCards();
+    
+    // PWA用のビューポート調整
+    window.addEventListener('load', () => {
+      if ('visualViewport' in window) {
+        const viewport = window.visualViewport;
+        function handleViewport() {
+          const height = viewport.height;
+          document.documentElement.style.setProperty('--vh', `${height * 0.01}px`);
+        }
+        viewport.addEventListener('resize', handleViewport);
+        handleViewport();
+      }
+    });
+    
   </script>
 </body>
 </html>
